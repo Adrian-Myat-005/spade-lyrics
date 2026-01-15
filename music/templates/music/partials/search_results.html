@@ -1,0 +1,60 @@
+{% if query %}
+<div class="bg-black border border-spade-red rounded-lg shadow-[0_0_20px_rgba(225,29,72,0.2)] overflow-hidden">
+    
+    {% if songs or artists %}
+        
+        {% if artists %}
+        <div>
+            <div class="px-4 py-2 bg-gray-900 text-xs font-bold text-spade-red uppercase tracking-widest border-b border-gray-800">Artists</div>
+            <ul>
+                {% for artist in artists %}
+                <li class="border-b border-gray-800 last:border-b-0">
+                    <a href="#" class="block px-4 py-3 hover:bg-spade-red/10 transition-colors flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-800 overflow-hidden flex-shrink-0">
+                            {% if artist.cover_image %}
+                                <img src="{{ artist.cover_image.url }}" alt="{{ artist.name }}" class="w-full h-full object-cover">
+                            {% else %}
+                                <div class="w-full h-full flex items-center justify-center text-gray-500 text-xs">♠️</div>
+                            {% endif %}
+                        </div>
+                        <span class="text-white font-medium">{{ artist.name }}</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if songs %}
+        <div class="border-t border-spade-red">
+            <div class="px-4 py-2 bg-gray-900 text-xs font-bold text-spade-red uppercase tracking-widest border-b border-gray-800">Songs</div>
+            <ul>
+                {% for song in songs %}
+                <li class="border-b border-gray-800 last:border-b-0">
+                    <a href="{% url 'song_detail' song.slug %}" class="block px-4 py-3 hover:bg-spade-red/10 transition-colors">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="text-white font-medium">{{ song.title }}</div>
+                                <div class="text-xs text-gray-500">{{ song.artist.name }}</div>
+                            </div>
+                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </div>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+    {% else %}
+        <!-- Empty State -->
+        <div class="p-6 text-center">
+            <p class="text-gray-400 mb-4">No results found for "<span class="text-white">{{ query }}</span>"</p>
+            <a href="#" class="inline-block px-4 py-2 bg-gray-800 hover:bg-spade-red text-white text-sm font-bold rounded-full transition-colors border border-gray-700 hover:border-spade-red">
+                Request this Song for Spade
+            </a>
+        </div>
+    {% endif %}
+
+</div>
+{% endif %}

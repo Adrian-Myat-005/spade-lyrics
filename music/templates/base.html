@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Spade | Dig Deeper{% endblock %}</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'spade-black': '#000000',
+                        'spade-red': '#E11D48',      /* Crimson Red */
+                        'spade-dark-grey': '#333333',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Roboto', 'Padauk', 'Myanmar3', 'sans-serif'],
+                        burmese: ['Padauk', 'Myanmar3', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'glow-red': '0 0 15px rgba(225, 29, 72, 0.5)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000000; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #E11D48; 
+        }
+        
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col bg-black text-white">
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-black border-b border-gray-900" x-data="{ mobileMenuOpen: false }">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                
+                <!-- Left: Logo -->
+                <div class="flex-shrink-0 flex items-center gap-2">
+                    <a href="/" class="group flex items-center gap-2">
+                        <!-- Spade Icon (Unicode placeholder or SVG) -->
+                        <span class="text-3xl text-spade-red transform group-hover:scale-110 transition-transform">♠️</span>
+                        <span class="text-xl font-bold tracking-widest text-white uppercase">Spade</span>
+                    </a>
+                </div>
+
+                <!-- Center: Search Bar (Hidden on Mobile, Visible on md+) -->
+                <div class="hidden md:block flex-1 max-w-lg mx-8 relative">
+                    <div class="relative group">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 group-focus-within:text-spade-red transition-colors">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </span>
+                        <input type="search" name="q" 
+                               hx-get="/search/results/"
+                               hx-trigger="keyup changed delay:500ms"
+                               hx-target="#search-results"
+                               class="w-full py-2 pl-10 pr-4 text-sm text-white bg-gray-900 rounded-full border border-transparent 
+                                      focus:outline-none focus:ring-1 focus:ring-spade-red focus:shadow-glow-red transition-all duration-300 placeholder-gray-500" 
+                               placeholder="Search artists, lyrics, videos..." autocomplete="off">
+                    </div>
+                    <!-- HTMX Search Results Container -->
+                    <div id="search-results" class="absolute top-full left-0 w-full mt-2 z-50"></div>
+                </div>
+
+                <!-- Right: Menu & Upload -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="#" class="text-gray-300 hover:text-white text-sm font-medium transition-colors">The Dig</a>
+                    <a href="#" class="text-gray-300 hover:text-white text-sm font-medium transition-colors">Uncover</a>
+                    <a href="#" class="flex items-center gap-2 border border-spade-red text-spade-red hover:bg-spade-red hover:text-white px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-300">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        Upload
+                    </a>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="flex items-center md:hidden">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white focus:outline-none">
+                        <span class="sr-only">Open main menu</span>
+                        <svg x-show="!mobileMenuOpen" class="block h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        <svg x-show="mobileMenuOpen" x-cloak class="block h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div x-show="mobileMenuOpen" x-cloak class="md:hidden bg-black border-b border-gray-800 absolute w-full z-40">
+            <div class="px-4 pt-4 pb-6 space-y-4">
+                <input type="search" class="w-full px-4 py-2 bg-gray-900 border border-gray-800 rounded-full text-white placeholder-gray-500 focus:outline-none focus:border-spade-red focus:shadow-glow-red" placeholder="Search...">
+                <a href="#" class="block text-base font-medium text-gray-300 hover:text-white">The Dig</a>
+                <a href="#" class="block text-base font-medium text-gray-300 hover:text-white">Uncover</a>
+                <a href="#" class="block w-full text-center border border-spade-red text-spade-red hover:bg-spade-red hover:text-white px-4 py-2 rounded-md font-bold transition-colors">
+                    Upload
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow">
+        {% block content %}
+        <!-- Default Content Placeholder (Hero) -->
+        <div class="relative bg-black overflow-hidden">
+            <!-- Red Gradient Glow -->
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-96 bg-gradient-to-b from-spade-red/20 to-transparent pointer-events-none"></div>
+            
+            <div class="relative max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
+                <h1 class="text-5xl md:text-7xl font-extrabold tracking-tighter mb-6">
+                    DIG <span class="text-transparent bg-clip-text bg-gradient-to-r from-spade-red to-red-600">DEEPER</span>.
+                </h1>
+                <p class="text-gray-400 text-xl max-w-2xl mx-auto mb-10">
+                    Uncover the meaning behind the lyrics. The underground sound of Myanmar, decoded.
+                </p>
+                <div class="flex gap-4">
+                    <a href="#" class="bg-spade-red hover:bg-red-700 text-white px-8 py-3 rounded-full font-bold text-lg transition-all shadow-[0_0_20px_rgba(225,29,72,0.4)] hover:shadow-[0_0_30px_rgba(225,29,72,0.6)]">
+                        Explore Spade
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-black border-t border-gray-900 mt-auto">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl text-spade-red">♠️</span>
+                    <span class="text-lg font-bold text-white">SPADE</span>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-500 hover:text-spade-red transition-colors">Instagram</a>
+                    <a href="#" class="text-gray-500 hover:text-spade-red transition-colors">TikTok</a>
+                    <a href="#" class="text-gray-500 hover:text-spade-red transition-colors">Facebook</a>
+                </div>
+                <p class="text-gray-600 text-sm">&copy; 2026 Spade Media.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
