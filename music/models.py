@@ -22,7 +22,7 @@ class Song(models.Model):
     youtube_url = models.URLField(blank=True, help_text="Full YouTube video URL")
     featured = models.BooleanField(default=False)
     is_spade_exclusive = models.BooleanField(default=False, help_text="Mark if this content is produced by Spade.")
-    
+    is_trending = models.BooleanField(default=False, help_text="Check this to show in the Trending section.")
     STATUS_CHOICES = [
         ('draft', 'Draft'),
         ('published', 'Published'),
@@ -37,7 +37,7 @@ class Song(models.Model):
               @click.stop="openAnnotation('Lyric')">Lyric</span>
         """
         import re
-        
+
         def replace_match(match):
             # content inside brackets
             text = match.group(1)
@@ -68,7 +68,7 @@ class SpadeSession(models.Model):
         ('uncover', 'Uncover (Lyrics Breakdown)'),
         ('performance', 'Live Performance'),
     ]
-    
+
     song = models.ForeignKey(Song, on_delete=models.CASCADE, related_name='spade_sessions', null=True, blank=True)
     title = models.CharField(max_length=200)
     youtube_id = models.CharField(max_length=50, help_text="The 11-character YouTube Video ID")

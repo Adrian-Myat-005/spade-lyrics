@@ -1,45 +1,54 @@
 from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
 from django.db.models import Q
 from .models import Song, Artist
+import json
+
+def index(request):
+    # 1. Trending Songs (Only those checked as 'is_trending')
+    trending_songs = Song.objects.filter(status='published', is_trending=True).select_related('artist').order_by('-release_date')[:3]
+
+    # 2. The Raw List (All published songs, newest first)
+    all_uploads = Song.objects.filter(status='published').select_related('artist').order_by('-id')[:20]
+
+    context = {
+        'trending_songs': trending_songs,
+        'all_uploads': all_uploads
+    }
+    return render(request, 'home.html', context)
 
 def song_detail(request, slug):
     song = get_object_or_404(Song, slug=slug)
-    
-    # Get the primary video (Spade Session) or fallback
-    # We prefer a Spade Session if it exists
-    main_video = song.spade_sessions.first()
-    
-    # Get all annotations for this song
-    annotations = song.annotations.all()
-    
-    # Create a dictionary for easy lookup in the template/JS
-    # Key: lyric_snippet (stripped of brackets if necessary, but here likely exact match)
-    # Value: explanation
-    annotations_dict = {a.lyric_snippet: a.explanation for a in annotations}
-    
-    return render(request, 'music/song_detail.html', {
-        'song': song,
-        'annotations_json': annotations_dict,
-        'main_video': main_video,
-    })
+    rendered_lyrics = song.get_rendered_lyrics()
+    annotations_list = list(song.annotations.values('lyric_snippet', 'explanation'))
 
-def search_results(request):
+    context = {
+        'song': song,
+        'rendered_lyrics': rendered_lyrics,
+        'annotations_json': json.dumps(annotations_list),
+    }
+    return render(request, 'song_detail.html', context)
+
+# NEW: Live Search Endpoint
+def search_suggestions(request):
     query = request.GET.get('q', '')
-    songs = []
-    artists = []
-    
-    if query:
-        # icontains handles case-insensitive matching and usually works well with Unicode
-        songs = Song.objects.filter(
-            Q(title__icontains=query) | Q(lyrics__icontains=query)
-        ).distinct()[:5]
-        
-        artists = Artist.objects.filter(
-            name__icontains=query
-        )[:3]
-    
-    return render(request, 'music/partials/search_results.html', {
-        'songs': songs,
-        'artists': artists,
-        'query': query,
-    })
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+
+    # Search in Song Titles AND Artist Names
+    songs = Song.objects.filter(
+        Q(title__icontains=query) |
+        Q(artist__name__icontains=query),
+        status='published'
+    )[:5] # Limit to 5 results
+
+    results = []
+    for song in songs:
+        results.append({
+            'title': song.title,
+            'artist': song.artist.name,
+            'url': f"/song/{song.slug}/",
+            'type': 'Song'
+        })
+
+    return JsonResponse({'results': results})
