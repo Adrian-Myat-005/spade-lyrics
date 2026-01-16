@@ -11,9 +11,9 @@
      }">
 
     <!-- Cover Background (Subtle) -->
-    {% if song.artist.cover_image %}
+    {% if song.cover_image or song.artist.cover_image %}
     <div class="fixed top-0 left-0 w-full h-[50vh] z-0 opacity-20 pointer-events-none fade-mask">
-        <img src="{{ song.artist.cover_image.url }}" class="w-full h-full object-cover grayscale">
+        <img src="{% if song.cover_image %}{{ song.cover_image.url }}{% else %}{{ song.artist.cover_image.url }}{% endif %}" class="w-full h-full object-cover grayscale">
         <div class="absolute inset-0 bg-gradient-to-b from-black/0 via-black/80 to-black"></div>
     </div>
     {% endif %}

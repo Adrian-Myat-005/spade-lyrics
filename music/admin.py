@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django import forms
-from .models import Artist, Song, Annotation, SpadeSession
+from .models import Artist, Song, Annotation, SpadeSession, Genre, Producer
 
 # 1. Custom Form (Keeps your nice styling for the lyrics box)
 class SongAdminForm(forms.ModelForm):
@@ -11,9 +11,20 @@ class SongAdminForm(forms.ModelForm):
             'lyrics': forms.Textarea(attrs={
                 'rows': 20,
                 'cols': 80,
-                'style': 'font-family: monospace; white-space: pre; background-color: #f8f8f8;'
+                'class': 'vLargeTextField font-monospace' # Use Django admin classes + monospace
             }),
         }
+
+@admin.register(Genre)
+class GenreAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug')
+    prepopulated_fields = {'slug': ('name',)}
+
+@admin.register(Producer)
+class ProducerAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug')
+    search_fields = ('name',)
+    prepopulated_fields = {'slug': ('name',)}
 
 # 2. Inlines (This puts Annotations INSIDE the Song page)
 class AnnotationInline(admin.TabularInline): # Changed to Tabular for cleaner layout

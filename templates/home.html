@@ -5,17 +5,54 @@
      x-data="{
         searchOpen: false,
         query: '{{ query }}',
-        activeGenre: '{{ current_genre }}'
+        activeGenre: '{{ current_genre }}',
+        suggestions: [],
+        showSuggestions: false,
+        fetchSuggestions() {
+            if (this.query.length < 2) {
+                this.suggestions = [];
+                this.showSuggestions = false;
+                return;
+            }
+            fetch(`/api/search/?q=${this.query}`)
+                .then(res => res.json())
+                .then(data => {
+                    this.suggestions = data.results;
+                    this.showSuggestions = this.suggestions.length > 0;
+                });
+        }
      }">
 
     <!-- SEARCH HEAD -->
-    <div class="mb-24">
+    <div class="mb-24 relative" @click.away="showSuggestions = false">
         <form action="." method="get" class="relative group">
              <input type="hidden" name="genre" :value="activeGenre">
-             <input type="text" name="q" value="{{ query }}" 
+             <input type="text" name="q" x-model="query" @input.debounce.300ms="fetchSuggestions()"
+                   @focus="showSuggestions = suggestions.length > 0"
+                   autocomplete="off"
                    placeholder="SEARCH DATABASE..."
-                   class="w-full bg-transparent border-b-2 border-neutral-800 text-3xl md:text-5xl font-black text-white pt-10 pb-1 leading-normal focus:outline-none focus:border-red-600 placeholder-neutral-800 transition-colors uppercase tracking-tight font-burmese">
+                   class="w-full bg-transparent border-b-2 border-neutral-800 text-3xl md:text-5xl font-black text-white pt-10 pb-1 leading-normal focus:outline-none focus:border-red-600 placeholder-neutral-800 transition-colors uppercase tracking-tight font-burmese relative z-20">
         </form>
+
+        <!-- FORECAST WINDOW (Search Suggestions) -->
+        <div x-show="showSuggestions" 
+             style="display: none;"
+             x-transition.opacity.duration.200ms
+             class="absolute top-full left-0 w-full bg-black/90 backdrop-blur-md border border-neutral-800 border-t-0 z-30 shadow-2xl">
+            <template x-for="result in suggestions" :key="result.url">
+                <a :href="result.url" class="block px-6 py-4 border-b border-neutral-800/50 hover:bg-white/5 transition-colors group">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-lg font-bold text-white uppercase tracking-tight font-burmese" x-text="result.title"></div>
+                            <div class="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1" x-text="result.artist"></div>
+                        </div>
+                        <div class="text-[10px] text-red-600 font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                            View
+                        </div>
+                    </div>
+                </a>
+            </template>
+        </div>
         
         <!-- Filter Chips -->
         <div class="flex flex-wrap gap-3 mt-8">

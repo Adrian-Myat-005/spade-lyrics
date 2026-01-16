@@ -29,6 +29,7 @@ class Producer(models.Model):
 class Song(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
+    cover_image = models.ImageField(upload_to='songs/', blank=True, null=True)
     artist = models.ForeignKey(Artist, on_delete=models.CASCADE, related_name='songs')
     producers = models.ManyToManyField(Producer, related_name='songs', blank=True)
     genres = models.ManyToManyField(Genre, related_name='songs', blank=True)

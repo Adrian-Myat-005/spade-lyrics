@@ -42,7 +42,9 @@
         <div class="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center md:items-end gap-8 relative z-10">
             <!-- Album Art / Placeholder -->
             <div class="w-48 h-48 md:w-64 md:h-64 flex-shrink-0 bg-gray-800 border-2 border-spade-red shadow-[0_0_20px_rgba(225,29,72,0.3)] flex items-center justify-center overflow-hidden">
-                {% if song.artist.cover_image %}
+                {% if song.cover_image %}
+                    <img src="{{ song.cover_image.url }}" alt="{{ song.title }}" class="w-full h-full object-cover">
+                {% elif song.artist.cover_image %}
                     <img src="{{ song.artist.cover_image.url }}" alt="{{ song.artist.name }}" class="w-full h-full object-cover">
                 {% else %}
                     <span class="text-6xl">♠️</span>
