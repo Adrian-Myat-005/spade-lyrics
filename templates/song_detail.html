@@ -1,78 +1,99 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<script src="//unpkg.com/alpinejs" defer></script>
-
-<div class="min-h-screen bg-black text-white relative"
+<div class="min-h-screen relative"
      x-data="{
         annotations: [],
         activeAnnotation: null,
         init() {
-            // Only load annotations logic
             try { this.annotations = JSON.parse(`{{ annotations_json|escapejs }}`); } catch(e) {}
         }
      }">
 
-    <div class="relative py-12 border-b border-red-900/30">
-        <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-red-900/20 to-black pointer-events-none"></div>
+    <!-- Cover Background (Subtle) -->
+    {% if song.artist.cover_image %}
+    <div class="fixed top-0 left-0 w-full h-[50vh] z-0 opacity-20 pointer-events-none fade-mask">
+        <img src="{{ song.artist.cover_image.url }}" class="w-full h-full object-cover grayscale">
+        <div class="absolute inset-0 bg-gradient-to-b from-black/0 via-black/80 to-black"></div>
+    </div>
+    {% endif %}
 
-        <div class="relative max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-end gap-6">
-            {% if song.artist.cover_image %}
-            <img src="{{ song.artist.cover_image.url }}" class="w-32 h-32 md:w-48 md:h-48 object-cover rounded-lg border-2 border-red-600 shadow-lg">
-            {% else %}
-            <div class="w-32 h-32 md:w-48 md:h-48 bg-neutral-900 rounded-lg border-2 border-red-600 flex items-center justify-center">
-                <span class="text-4xl">♠</span>
-            </div>
-            {% endif %}
-
-            <div class="flex-1">
-                <h1 class="text-4xl md:text-6xl font-black tracking-tight text-white mb-2">{{ song.title }}</h1>
-                <p class="text-xl text-gray-300 font-medium flex items-center gap-2">
-                    by <span class="text-red-500">{{ song.artist.name }}</span>
-                </p>
-
-                {% if song.youtube_url %}
-                <a href="{{ song.youtube_url }}" target="_blank"
-                   class="mt-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white bg-red-700 px-4 py-2 rounded hover:bg-red-600 transition shadow-lg hover:shadow-red-900/50">
-                    <span>▶ Watch on YouTube</span>
-                </a>
+    <div class="relative z-10 max-w-4xl mx-auto px-6 pt-32 pb-32">
+        
+        <!-- HEADER -->
+        <div class="mb-16 border-l-4 border-red-600 pl-6">
+            <h1 class="text-5xl md:text-8xl font-black text-white uppercase tracking-tighter leading-none mb-4">
+                {{ song.title }}
+            </h1>
+            <div class="flex flex-col md:flex-row md:items-center gap-4 text-sm font-bold uppercase tracking-widest text-gray-400">
+                <span class="text-white">{{ song.artist.name }}</span>
+                {% if song.producers.exists %}
+                <span class="hidden md:inline text-neutral-600">/</span>
+                <span class="text-neutral-500">
+                    Prod. {% for p in song.producers.all %}{{ p.name }} {% endfor %}
+                </span>
                 {% endif %}
             </div>
-        </div>
-    </div>
 
-    <div class="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 lg:grid-cols-12 gap-12">
-
-        <div class="lg:col-span-7">
-            <h3 class="text-red-600 font-bold uppercase tracking-widest mb-6 border-b border-red-900/30 pb-2">Lyrics</h3>
-
-            <div class="prose prose-invert prose-lg leading-loose font-serif text-gray-300"
-                 @click="if($event.target.tagName === 'SPAN') activeAnnotation = annotations.find(a => a.lyric_snippet === $event.target.innerText)">
-                {{ rendered_lyrics|safe|linebreaks }}
-            </div>
+            {% if song.youtube_url %}
+            <a href="{{ song.youtube_url }}" target="_blank" class="mt-8 inline-block bg-white text-black hover:bg-red-600 hover:text-white px-6 py-3 text-xs font-bold uppercase tracking-widest transition-colors">
+                Play Visuals
+            </a>
+            {% endif %}
         </div>
 
-        <div class="lg:col-span-5 relative">
-            <div class="sticky top-24">
-
-                <div x-show="!activeAnnotation" class="border border-neutral-800 bg-neutral-900/50 p-8 rounded-lg text-center">
-                    <span class="text-4xl block mb-4">♠</span>
-                    <h3 class="text-xl font-bold text-white mb-2">Dig Deeper</h3>
-                    <p class="text-gray-500">Click on any <span class="text-red-500 border-b border-red-500">underlined lyric</span> to uncover meanings.</p>
+        <!-- LYRICS & ANNOTATIONS GRID -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-10">
+            
+            <div class="md:col-span-8">
+                <div class="text-lg md:text-xl font-medium leading-loose text-gray-300 whitespace-pre-wrap"
+                     @click="if($event.target.tagName === 'SPAN') activeAnnotation = annotations.find(a => a.lyric_snippet === $event.target.innerText)">
+                    {{ rendered_lyrics|safe }}
                 </div>
-
-                <div x-show="activeAnnotation" style="display: none;"
-                     class="border-l-4 border-red-600 bg-neutral-900 p-6 rounded-r-lg shadow-2xl">
-                    <div class="text-xs font-bold text-red-500 uppercase mb-2 tracking-widest">Spade Analysis</div>
-                    <blockquote class="text-lg font-serif italic text-white mb-4 border-b border-gray-800 pb-4">
-                        "<span x-text="activeAnnotation ? activeAnnotation.lyric_snippet : ''"></span>"
-                    </blockquote>
-                    <p class="text-gray-300 leading-relaxed" x-text="activeAnnotation ? activeAnnotation.explanation : ''"></p>
-                    <button @click="activeAnnotation = null" class="mt-6 text-xs text-gray-500 hover:text-white transition">CLOSE</button>
-                </div>
-
             </div>
+
+            <div class="md:col-span-4 hidden md:block relative">
+                <div class="sticky top-24 space-y-4">
+                    
+                    <div class="text-[10px] font-bold text-neutral-600 uppercase tracking-widest border-b border-neutral-800 pb-2">
+                        Intel / Analysis
+                    </div>
+
+                    <div x-show="!activeAnnotation" class="text-sm text-neutral-500 py-4">
+                        Select highlighted text to read data.
+                    </div>
+
+                    <div x-show="activeAnnotation" style="display: none;" class="bg-neutral-900 border border-neutral-800 p-6 shadow-xl animate-fade-in">
+                        <blockquote class="text-white font-bold mb-4 border-l-2 border-red-600 pl-3">
+                            "<span x-text="activeAnnotation ? activeAnnotation.lyric_snippet : ''"></span>"
+                        </blockquote>
+                        <p class="text-sm text-gray-400 leading-relaxed" x-text="activeAnnotation ? activeAnnotation.explanation : ''"></p>
+                        <button @click="activeAnnotation = null" class="mt-4 text-[10px] font-bold text-red-600 uppercase">Close</button>
+                    </div>
+
+                </div>
+            </div>
+
         </div>
+
+        <!-- MOBILE ANNOTATION DRAWER (Bottom Sheet) -->
+        <div x-show="activeAnnotation" 
+             style="display: none;"
+             class="md:hidden fixed bottom-0 left-0 w-full bg-neutral-900 border-t border-red-600 z-50 p-6 shadow-2xl"
+             x-transition:enter="transition transform duration-300"
+             x-transition:enter-start="translate-y-full"
+             x-transition:enter-end="translate-y-0"
+             x-transition:leave="transition transform duration-300"
+             x-transition:leave-start="translate-y-0"
+             x-transition:leave-end="translate-y-full">
+            
+            <div class="flex justify-between items-start mb-4">
+                <span class="text-[10px] font-bold text-red-600 uppercase">Analysis</span>
+                <button @click="activeAnnotation = null" class="text-xl leading-none text-white">&times;</button>
+            </div>
+            <p class="text-sm text-gray-300 leading-relaxed" x-text="activeAnnotation ? activeAnnotation.explanation : ''"></p>
+        </div>
+
     </div>
 
 </div>

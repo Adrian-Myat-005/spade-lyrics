@@ -1,24 +1,60 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.db.models import Q
-from .models import Song, Artist
+from .models import Song, Artist, Genre, Producer
 import json
 
 def index(request):
-    # 1. Trending Songs (Only those checked as 'is_trending')
-    trending_songs = Song.objects.filter(status='published', is_trending=True).select_related('artist').order_by('-release_date')[:3]
+    # --- ARCHIVE SEARCH & FILTER LOGIC ---
+    query = request.GET.get('q', '')
+    genre_slug = request.GET.get('genre', '')
+    sort_by = request.GET.get('sort', 'newest') # newest, views, bpm, title
+    
+    songs = Song.objects.filter(status='published').select_related('artist').prefetch_related('genres', 'producers')
 
-    # 2. The Raw List (All published songs, newest first)
-    all_uploads = Song.objects.filter(status='published').select_related('artist').order_by('-id')[:20]
+    # 1. Search Filter
+    if query:
+        songs = songs.filter(
+            Q(title__icontains=query) |
+            Q(artist__name__icontains=query) |
+            Q(producers__name__icontains=query)
+        ).distinct()
+
+    # 2. Genre Filter
+    if genre_slug:
+        songs = songs.filter(genres__slug=genre_slug)
+
+    # 3. Sorting
+    if sort_by == 'views':
+        songs = songs.order_by('-views')
+    elif sort_by == 'bpm':
+        songs = songs.order_by('bpm') # Slow to fast
+    elif sort_by == 'title':
+        songs = songs.order_by('title')
+    else: # newest
+        songs = songs.order_by('-release_date', '-id')
+
+    # Context Data
+    genres = Genre.objects.all().order_by('name')
+    trending_songs = Song.objects.filter(status='published', is_trending=True).order_by('-views')[:5]
 
     context = {
+        'archive_list': songs,
+        'genres': genres,
         'trending_songs': trending_songs,
-        'all_uploads': all_uploads
+        'current_sort': sort_by,
+        'current_genre': genre_slug,
+        'query': query,
     }
     return render(request, 'home.html', context)
 
 def song_detail(request, slug):
     song = get_object_or_404(Song, slug=slug)
+    
+    # Increment View Count
+    song.views += 1
+    song.save(update_fields=['views'])
+    
     rendered_lyrics = song.get_rendered_lyrics()
     annotations_list = list(song.annotations.values('lyric_snippet', 'explanation'))
 

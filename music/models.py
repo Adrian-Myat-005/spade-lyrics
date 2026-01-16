@@ -12,10 +12,32 @@ class Artist(models.Model):
     def __str__(self):
         return self.name
 
+class Genre(models.Model):
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)
+
+    def __str__(self):
+        return self.name
+
+class Producer(models.Model):
+    name = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True)
+    
+    def __str__(self):
+        return self.name
+
 class Song(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
     artist = models.ForeignKey(Artist, on_delete=models.CASCADE, related_name='songs')
+    producers = models.ManyToManyField(Producer, related_name='songs', blank=True)
+    genres = models.ManyToManyField(Genre, related_name='songs', blank=True)
+    
+    # Metadata for Database Feel
+    bpm = models.IntegerField(null=True, blank=True, help_text="Beats Per Minute")
+    key = models.CharField(max_length=10, null=True, blank=True, help_text="e.g. C# Minor")
+    views = models.PositiveIntegerField(default=0)
+    
     lyrics = models.TextField(help_text="Enter lyrics here. Annotations will be linked to text segments.")
     album = models.CharField(max_length=200, blank=True)
     release_date = models.DateField(blank=True, null=True)
@@ -42,7 +64,7 @@ class Song(models.Model):
             # content inside brackets
             text = match.group(1)
             # Escape quotes in text if necessary, though simpler is safer
-            return f'<span class="cursor-pointer border-b border-spade-red hover:bg-spade-red/20 transition-colors" @click.stop="openAnnotation(\'{text}\')" :class="activeAnnotation?.snippet === \'{text}\' ? \'bg-red-900 text-white\' : \'\'">{text}</span>'
+            return f'<span class="cursor-pointer border-b border-red-600 hover:bg-red-900/50 transition-colors" @click.stop="openAnnotation(\'{text}\')" :class="activeAnnotation?.snippet === \'{text}\' ? \'bg-red-600 text-black font-bold\' : \'\'">{text}</span>'
 
         # Regex to find [text]
         # Non-greedy match for content inside brackets

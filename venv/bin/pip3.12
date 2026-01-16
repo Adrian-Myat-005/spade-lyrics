@@ -1,4 +1,4 @@
-#!/home/adrian/Desktop/spade/venv/bin/python3
+#!/home/adrian/Desktop/spade/spade-lyrics/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

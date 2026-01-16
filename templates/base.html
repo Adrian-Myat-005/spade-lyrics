@@ -1,85 +1,240 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPADE | Dig Deeper</title>
+    <title>SPADE | RAW</title>
+    
+    <link rel="icon" type="image/png" href="{% static 'music/img/spade.webp' %}">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="//unpkg.com/alpinejs" defer></script>
-    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Inter', 'Padauk', sans-serif; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none;  scrollbar-width: none; }
+        @font-face {
+            font-family: 'AntiVirus';
+            src: url("{% static 'music/fonts/AntiVirus-Regular.ttf' %}") format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body { 
+            font-family: 'AntiVirus', sans-serif; 
+            background-color: #050505;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        .font-burmese, [class*="prose"] {
+            font-family: 'AntiVirus', sans-serif !important;
+        }
         [x-cloak] { display: none !important; }
+
+        /* --- LOGO TO EDGE SCROLL BAR --- */
+        .logo-wrapper {
+            position: fixed;
+            z-index: 60;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            
+            /* Initial State (Logo) */
+            left: 24px;
+            width: 48px;
+            height: 48px;
+            
+            /* Transition for top (moving with menu) and edge flow */
+            transition: 
+                top 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                left 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                width 0.3s ease,
+                height 0.3s ease,
+                border-radius 0.3s ease,
+                background-color 0.3s ease;
+        }
+
+        .logo-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: opacity 0.2s ease;
+        }
+
+        /* Scrolled State: Locked to Edge */
+        .logo-wrapper.is-scrolled {
+            left: 0 !important;
+            width: 3px;
+            background-color: #FF0000;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .logo-wrapper.is-scrolled img {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* --- OPIUM UPPER BLOCK DRAWER --- */
+        .opium-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px; 
+            background-color: #050505;
+            z-index: 55;
+            
+            /* Drawer Animation */
+            transform: translateY(-100%);
+            opacity: 0;
+            transition: 
+                transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.3s ease;
+            
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            overflow: hidden;
+        }
+
+        .opium-overlay.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Nav Container within the Bar */
+        .opium-bar-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 100%;
+            padding: 0 2rem;
+        }
+
+        .opium-nav-row {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 2rem;
+            height: 100%;
+            
+            /* Horizontal Scroll (Swipeable) */
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            flex-grow: 1;
+            margin: 0 2rem;
+        }
+        
+        .opium-nav-row::-webkit-scrollbar { display: none; }
+
+        .opium-link {
+            font-family: 'AntiVirus', sans-serif;
+            font-weight: normal; /* AntiVirus is likely heavy enough, or use bold if supported */
+            font-size: 0.9rem;
+            color: #444; 
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .opium-link:hover {
+            color: #fff;
+            text-shadow: 0 0 10px #FF0000;
+        }
+
+        .opium-link.active {
+            color: #FF0000;
+        }
+
+        .opium-sep {
+            font-size: 0.7rem;
+            color: #1a1a1a;
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        /* Blend mode for logo */
+        .blend-diff { mix-blend-mode: difference; }
+
     </style>
 </head>
 
-<body class="bg-black text-white antialiased overflow-hidden"
-      x-data="{ sidebarOpen: window.innerWidth >= 768 }">
+<body class="min-h-screen relative" 
+      x-data="{ 
+          menuOpen: false, 
+          scrolled: false,
+          thumbHeight: 40, 
+          thumbTop: 0,
+          updateScroll() {
+            const winScroll = window.pageYOffset || document.documentElement.scrollTop;
+            const winHeight = document.documentElement.clientHeight;
+            const docHeight = document.documentElement.scrollHeight;
+            const scrollable = docHeight - winHeight;
+            
+            // STRICT OVER-SCROLL LOGIC
+            if (winScroll < 0) {
+                this.menuOpen = true;
+            } else if (winScroll > 0) {
+                this.menuOpen = false;
+            }
 
-    <div class="flex h-screen">
+            // Scroll Thumb Logic
+            this.scrolled = winScroll > 10;
+            if (scrollable > 0) {
+                 const maxTop = winHeight - this.thumbHeight;
+                 this.thumbTop = (winScroll / scrollable) * maxTop;
+            }
+          }
+      }"
+      @scroll.window="updateScroll()"
+      @wheel.window="if (window.pageYOffset <= 0 && $event.deltaY < -30) menuOpen = true">
 
-        <aside class="bg-neutral-900 border-r border-neutral-800 flex flex-col transition-all duration-300 overflow-hidden"
-               :class="sidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full md:translate-x-0 md:w-0'">
+    <!-- LOGO (Morphs: Logo -> Left Edge Thumb) -->
+    <a href="/" 
+       class="logo-wrapper blend-diff"
+       :class="scrolled ? 'is-scrolled' : ''"
+       :style="scrolled ? `top:${thumbTop}px; height:${thumbHeight}px;` : 'top: 24px;' ">
+        <img src="{% static 'music/img/spade.webp' %}" alt="SPADE">
+    </a>
 
-            <div class="flex items-center justify-between px-6 h-16 border-b border-neutral-800 shrink-0 w-64">
-                <div class="flex items-center gap-2">
-                    <span class="text-3xl text-red-600">♠</span>
-                    <span class="font-bold text-xl tracking-wider text-white">SPADE</span>
-                </div>
-            </div>
+    <!-- MAIN CONTENT -->
+    <main class="relative z-10 min-h-screen">
+        {% block content %}
+        {% endblock %}
+    </main>
 
-            <div class="flex-1 overflow-y-auto py-6 px-4 space-y-8 w-64">
-                <div>
-                    <h3 class="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Discover</h3>
-                    <div class="space-y-1">
-                        <a href="/" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-white bg-neutral-800 border border-neutral-700">Home</a>
-                        <a href="#" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-400 hover:bg-neutral-800 hover:text-white transition">Trending</a>
-                    </div>
-                </div>
+    <!-- OPIUM UPPER BLOCK DRAWER (Swipeable) -->
+    <div class="opium-overlay" :class="menuOpen ? 'active' : ''">
+        <div class="opium-bar-content">
+            <!-- Spacer to clear logo area (Original Place: 24px + 48px = 72px) -->
+            <div class="w-24 flex-shrink-0"></div>
 
-                <div>
-                    <h3 class="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Genres</h3>
-                    <div class="space-y-1">
-                        <a href="#" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-400 hover:bg-neutral-800 hover:text-white transition">Hip Hop</a>
-                        <a href="#" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-400 hover:bg-neutral-800 hover:text-white transition">R&B / Soul</a>
-                        <a href="#" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-400 hover:bg-neutral-800 hover:text-white transition">Indie Pop</a>
-                    </div>
-                </div>
-
+            <nav class="opium-nav-row">
+                <a href="/" class="opium-link active">Index</a>
+                <span class="opium-sep">/</span>
+                <a href="/?sort=views" class="opium-link">Trending</a>
+                <span class="opium-sep">/</span>
+                <a href="/?q=" class="opium-link">Search</a>
                 {% if user.is_staff %}
-                <div>
-                    <h3 class="px-2 text-xs font-semibold text-red-500 uppercase tracking-wider mb-2">Staff Area</h3>
-                    <a href="/admin" class="group flex items-center px-2 py-2 text-sm font-bold rounded-md text-red-400 hover:bg-red-900/30 transition">Admin Dashboard</a>
-                </div>
+                <span class="opium-sep">/</span>
+                <a href="/admin" class="opium-link !text-red-900 hover:!text-red-500">System</a>
                 {% endif %}
-            </div>
-        </aside>
+            </nav>
 
-        <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative transition-all duration-300">
-
-            <header class="flex items-center justify-between px-4 h-16 bg-neutral-900 border-b border-neutral-800 shrink-0">
-                <div class="flex items-center gap-4">
-                    <button @click="sidebarOpen = !sidebarOpen" class="text-gray-300 p-2 border border-neutral-700 rounded hover:bg-neutral-800 hover:text-white transition">
-                        ☰
-                    </button>
-                    <span class="md:hidden font-bold text-xl tracking-wider text-white" x-show="!sidebarOpen">SPADE</span>
+            <!-- INTEGRATED TRIGGER BUTTON (Inside the Bar) -->
+            <button @click="menuOpen = !menuOpen" 
+                    class="group cursor-pointer mix-blend-difference flex-shrink-0 ml-4">
+                <div class="relative w-6 h-6 flex items-center justify-center transition-transform duration-300"
+                     :class="menuOpen ? 'rotate-45' : ''">
+                    <div class="absolute w-full h-[1px] bg-white group-hover:bg-red-600 transition-colors"></div>
+                    <div class="absolute h-full w-[1px] bg-white group-hover:bg-red-600 transition-colors"></div>
                 </div>
-            </header>
-
-            <main class="flex-1 overflow-y-auto bg-black scroll-smooth">
-                {% block content %}
-                {% endblock %}
-
-                <footer class="border-t border-neutral-800 py-8 mt-12 bg-black">
-                    <div class="text-center text-gray-600 text-xs">
-                        <p>&copy; 2026 Spade Media Myanmar.</p>
-                    </div>
-                </footer>
-            </main>
+            </button>
         </div>
-
     </div>
 
 </body>
